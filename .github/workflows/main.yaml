@@ -1,0 +1,32 @@
+name: Infrastructure-as-code vulnerability scan workflow
+
+on: [push, workflow_dispatch]
+
+jobs:
+    meterian_iac_scan:
+        name: Meterian IaC scan
+        runs-on: ubuntu-latest
+
+        steps:
+          - name: Checkout (official GitHub action)
+            uses: actions/checkout@v3
+
+          - name: Install Meterian ISAAC scanner
+            run: |
+                wget -q -O isaac https://raw.githubusercontent.com/MeterianHQ/isaac-scanner/main/isaac-ci
+                chmod +x isaac
+
+          - name: Perform scan
+            run: ./isaac --report-sbom=report.cdx.json --report-pdf=report.pdf --report-json=report.json
+            env:
+              METERIAN_API_TOKEN: ${{ secrets.METERIAN_API_TOKEN }} 
+          
+          - name: Upload artifacts (official GitHub action)
+            uses: actions/upload-artifact@v3
+            if: always()
+            with:
+              name: meterian-reports
+              path: |
+                report.json
+                report.pdf
+                report.cdx.json
